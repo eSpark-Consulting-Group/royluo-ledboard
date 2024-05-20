@@ -5,12 +5,10 @@ const int green = 6;
 const int blue = 7;
 const int button = 3;
 
-int buttonState = 0;
 int counter = 0;
-int pressStartTime = 0;
-
-bool programRunning = false;
+int buttonState = 0;
 int rgbBrightness = 255;
+bool programRunning = false;
 
 enum Color_Type {
   RED_PIN = 1,
@@ -37,6 +35,104 @@ enum RGB_Type {
   SILVER = 16
 };
 
+
+void standardStrobe(bool status) {
+  if (status == true) {
+    rgbWrite(RED, rgbBrightness);
+    delay(100);
+    rgbWrite(RED, 0);
+    delay(100);
+    rgbWrite(BLUE, rgbBrightness);
+    delay(100);
+    rgbWrite(BLUE, 0);
+    delay(100);
+    rgbWrite(GREEN, rgbBrightness);
+    delay(100);
+    rgbWrite(GREEN, 0);
+    delay(100);
+  } else {
+    rgbWrite(RED, 0);
+    rgbWrite(BLUE, 0);
+    rgbWrite(GREEN, 0);
+  }
+}
+
+void longStrobe(bool status) {
+  if (status == true) {
+    rgbWrite(RED, rgbBrightness);
+    delay(300);
+    rgbWrite(RED, 0);
+    delay(300);
+    rgbWrite(GREEN, rgbBrightness);
+    delay(300);
+    rgbWrite(GREEN, 0);
+    delay(300);
+    rgbWrite(BLUE, rgbBrightness);
+    delay(300);
+    rgbWrite(BLUE, 0);
+    delay(300);
+  } else {
+    rgbWrite(RED, 0);
+    rgbWrite(BLUE, 0);
+    rgbWrite(GREEN, 0);
+  }
+}
+void dots(bool status) {
+  if (status == true) {
+    rgbWrite(RED, rgbBrightness);
+    delay(50);
+    rgbWrite(RED, 0);
+    delay(100);
+    rgbWrite(GREEN, rgbBrightness);
+    delay(50);
+    rgbWrite(GREEN, 0);
+    delay(100);
+    rgbWrite(BLUE, rgbBrightness);
+    delay(50);
+    rgbWrite(BLUE, 0);
+    delay(100);
+  } else {
+    rgbWrite(RED, 0);
+    rgbWrite(BLUE, 0);
+    rgbWrite(GREEN, 0);
+  }
+}
+
+void flicker(bool status) {
+  if (status == true) {
+    rgbWrite(RED, rgbBrightness);
+    delay(20);
+    rgbWrite(RED, 0);
+    delay(200);
+    rgbWrite(BLUE, rgbBrightness);
+    delay(20);
+    rgbWrite(BLUE, 0);
+    delay(200);
+    rgbWrite(GREEN, rgbBrightness);
+    delay(20);
+    rgbWrite(GREEN, 0);
+    delay(200);
+  } else {
+    rgbWrite(RED, 0);
+    rgbWrite(BLUE, 0);
+    rgbWrite(GREEN, 0);
+  }
+}
+
+void ribbon(bool status) {
+  if (status == true) {
+    rgbWrite(RED, rgbBrightness);
+    delay(300);
+    rgbWrite(BLUE, rgbBrightness);
+    delay(300);
+    rgbWrite(GREEN, rgbBrightness);
+    delay(300);
+  } else {
+    rgbWrite(RED, 0);
+    rgbWrite(BLUE, 0);
+    rgbWrite(GREEN, 0);
+  }
+}
 
 void colorWrite(Color_Type color, int brightness) {
   switch (color) {
@@ -173,7 +269,7 @@ void setup() {
 
 void loop() {
 
- buttonState = digitalRead(button);
+  buttonState = digitalRead(button);
 
   if (buttonState == HIGH) {
     unsigned long pressStartTime = millis();
@@ -191,13 +287,38 @@ void loop() {
   if (programRunning) {
 
     if (buttonState == HIGH) {
-      delay(100);
       counter++;
-      rgbWrite(counter, rgbBrightness);
-      if (counter == maxColor) {
-        counter = 0;
+    } else {
+      if (counter == 1) {
+        Serial.print("Im in standardStrobe: ");
+        Serial.println(counter);
+        ribbon(false);
+        standardStrobe(true);
+      } else if (counter == 2) {
+        Serial.print("Im in longStrobe: ");
+        Serial.println(counter);
+        standardStrobe(false);
+        longStrobe(true);
+      } else if (counter == 3) {
+        Serial.print("Im in dots: ");
+        Serial.println(counter);
+        longStrobe(false);
+        dots(true);
+      } else if (counter == 4) {
+        Serial.print("Im in flicker: ");
+        Serial.println(counter);
+        dots(false);
+        flicker(true);
+      } else if (counter == 5) {
+        Serial.print("Im in ribbon: ");
+        Serial.println(counter);
+        flicker(false);
+        ribbon(true);
+      } else {
+        counter = 1;
       }
     }
+
   } else {
     for (int i = 0; i < maxColor; i++)
       rgbWrite(i, LOW);
