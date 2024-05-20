@@ -1,3 +1,5 @@
+const int maxColor = 16;
+
 const int red = 5;
 const int green = 6;
 const int blue = 7;
@@ -5,94 +7,154 @@ const int button = 3;
 
 int buttonState = 0;
 int counter = 0;
+int pressStartTime = 0;
 
 bool programRunning = false;
 int rgbBrightness = 255;
 
+enum Color_Type {
+  RED_PIN = 1,
+  GREEN_PIN = 2,
+  BLUE_PIN = 3
+};
 
 enum RGB_Type {
   RED = 1,
-  GREEN = 2,
-  BLUE = 3,
+  BLUE = 2,
+  GREEN = 3,
   YELLOW = 4,
-  MAGENTA = 5,
-  CYAN = 6,
+  LIME = 5,
+  ORANGE = 6,
   WHITE = 7,
-  ORANGE = 8,
-  VIOLET = 9,
-  ROSE = 10
-
+  WARMWHITE = 8,
+  MAGENTA = 9,
+  LAVENDER = 10,
+  PURPLE = 11,
+  TURQUOISE = 12,
+  SKY_BLUE = 13,
+  CORAL = 14,
+  FOREST_GREEN = 15,
+  SILVER = 16
 };
 
 
-void pwm_Write(RGB_Type color, int brightness) {
+void colorWrite(Color_Type color, int brightness) {
   switch (color) {
-    case RED:
+    case RED_PIN:
       analogWrite(red, brightness);
-      analogWrite(green, LOW);
-      analogWrite(blue, LOW);
       break;
-    case GREEN:
-      analogWrite(red, LOW);
+    case GREEN_PIN:
       analogWrite(green, brightness);
-      analogWrite(blue, LOW);
+      break;
+    case BLUE_PIN:
+      analogWrite(blue, brightness);
+      break;
+    default:
+      break;
+  }
+}
+
+
+void rgbWrite(RGB_Type pattern, int brightness) {
+  switch (pattern) {
+    case RED:
+      colorWrite(RED_PIN, brightness);
+      colorWrite(GREEN_PIN, LOW);
+      colorWrite(BLUE_PIN, LOW);
       break;
     case BLUE:
-      analogWrite(blue, brightness);
-      analogWrite(red, LOW);
-      analogWrite(green, LOW);
+      colorWrite(BLUE_PIN, brightness);
+      colorWrite(RED_PIN, LOW);
+      colorWrite(GREEN_PIN, LOW);
+      break;
+    case GREEN:
+      colorWrite(RED_PIN, LOW);
+      colorWrite(GREEN_PIN, brightness);
+      colorWrite(BLUE_PIN, LOW);
       break;
     case YELLOW:
-      analogWrite(red, brightness);
-      analogWrite(green, brightness);
-      analogWrite(blue, LOW);
+      colorWrite(RED_PIN, brightness);
+      colorWrite(GREEN_PIN, brightness);
+      colorWrite(BLUE_PIN, LOW);
       break;
-    case MAGENTA:
-      analogWrite(red, brightness);
-      analogWrite(green, LOW);
-      analogWrite(blue, brightness);
-      break;
-    case CYAN:
-      analogWrite(red, LOW);
-      analogWrite(green, brightness);
-      analogWrite(blue, brightness);
-      break;
-    case WHITE:
-      analogWrite(red, brightness);
-      analogWrite(green, brightness);
-      analogWrite(blue, brightness);
+    case LIME:
+      if (brightness > 0) {
+        colorWrite(RED_PIN, LOW);
+        colorWrite(GREEN_PIN, 128);
+        colorWrite(BLUE_PIN, LOW);
+      }
       break;
     case ORANGE:
       if (brightness > 0) {
-        analogWrite(red, brightness);
-        analogWrite(green, 125);
-        analogWrite(blue, LOW);
-      } else {
-        analogWrite(red, LOW);
-        analogWrite(green, LOW);
-        analogWrite(blue, LOW);
+        colorWrite(RED_PIN, brightness);
+        colorWrite(GREEN_PIN, 165);
+        colorWrite(BLUE_PIN, LOW);
       }
       break;
-    case VIOLET:
+    case WHITE:
+      colorWrite(RED_PIN, brightness);
+      colorWrite(GREEN_PIN, brightness);
+      colorWrite(BLUE_PIN, brightness);
+      break;
+    case WARMWHITE:
       if (brightness > 0) {
-        analogWrite(red, 127);
-        analogWrite(green, 0);
-        analogWrite(blue, brightness);
-      } else {
-        analogWrite(red, LOW);
-        analogWrite(green, LOW);
-        analogWrite(blue, LOW);
+        colorWrite(RED_PIN, 246);
+        colorWrite(GREEN_PIN, 231);
+        colorWrite(BLUE_PIN, 210);
       }
       break;
-    case ROSE:
+    case MAGENTA:
+      colorWrite(RED_PIN, brightness);
+      colorWrite(GREEN_PIN, LOW);
+      colorWrite(BLUE_PIN, brightness);
+      break;
+    case LAVENDER:
       if (brightness > 0) {
-        analogWrite(red, brightness);
-        analogWrite(green, 0);
-        analogWrite(blue, 127);
-      } else {
-        analogWrite(red, LOW);
-        analogWrite(green, LOW);
-        analogWrite(blue, LOW);
+        colorWrite(RED_PIN, 230);
+        colorWrite(GREEN_PIN, 230);
+        colorWrite(BLUE_PIN, 250);
+      }
+      break;
+    case PURPLE:
+      if (brightness > 0) {
+        colorWrite(RED_PIN, 128);
+        colorWrite(GREEN_PIN, LOW);
+        colorWrite(BLUE_PIN, 128);
+      }
+      break;
+    case TURQUOISE:
+      if (brightness > 0) {
+        colorWrite(RED_PIN, 64);
+        colorWrite(GREEN_PIN, 224);
+        colorWrite(BLUE_PIN, 208);
+      }
+      break;
+    case SKY_BLUE:
+      if (brightness > 0) {
+        colorWrite(RED_PIN, 135);
+        colorWrite(GREEN_PIN, 206);
+        colorWrite(BLUE_PIN, 235);
+      }
+      break;
+    case CORAL:
+      if (brightness > 0) {
+        colorWrite(RED_PIN, brightness);
+        colorWrite(GREEN_PIN, 127);
+        colorWrite(BLUE_PIN, 80);
+      }
+      break;
+    case FOREST_GREEN:
+      if (brightness > 0) {
+        colorWrite(RED_PIN, 34);
+        colorWrite(GREEN_PIN, 139);
+        colorWrite(BLUE_PIN, 34);
+      }
+      break;
+    case SILVER:
+      if (brightness > 0) {
+        colorWrite(RED_PIN, 192);
+        colorWrite(GREEN_PIN, 192);
+        colorWrite(BLUE_PIN, 192);
       }
       break;
     default:
@@ -110,7 +172,8 @@ void setup() {
 }
 
 void loop() {
-  buttonState = digitalRead(button);
+
+ buttonState = digitalRead(button);
 
   if (buttonState == HIGH) {
     unsigned long pressStartTime = millis();
@@ -130,53 +193,14 @@ void loop() {
     if (buttonState == HIGH) {
       delay(100);
       counter++;
-      switch (counter) {
-        case 1:
-          pwm_Write(RED, rgbBrightness);
-          break;
-        case 2:
-          pwm_Write(GREEN, rgbBrightness);
-          break;
-        case 3:
-          pwm_Write(BLUE, rgbBrightness);
-          break;
-        case 4:
-          pwm_Write(YELLOW, rgbBrightness);
-          break;
-        case 5:
-          pwm_Write(MAGENTA, rgbBrightness);
-          break;
-        case 6:
-          pwm_Write(CYAN, rgbBrightness);
-          break;
-        case 7:
-          pwm_Write(WHITE, rgbBrightness);
-          break;
-        case 8:
-          pwm_Write(ORANGE, rgbBrightness);
-          break;
-        case 9:
-          pwm_Write(VIOLET, rgbBrightness);
-          break;
-        case 10:
-          pwm_Write(ROSE, rgbBrightness);
-          break;
-        case 11:
-          counter = 0;
-          break;
+      rgbWrite(counter, rgbBrightness);
+      if (counter == maxColor) {
+        counter = 0;
       }
     }
   } else {
-    pwm_Write(RED, LOW);
-    pwm_Write(GREEN, LOW);
-    pwm_Write(BLUE, LOW);
-    pwm_Write(YELLOW, LOW);
-    pwm_Write(MAGENTA, LOW);
-    pwm_Write(CYAN, LOW);
-    pwm_Write(WHITE, LOW);
-    pwm_Write(ORANGE, LOW);
-    pwm_Write(VIOLET, LOW);
-    pwm_Write(ROSE, LOW);
+    for (int i = 0; i < maxColor; i++)
+      rgbWrite(i, LOW);
     delay(1000);
   }
 }
