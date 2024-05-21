@@ -17,6 +17,7 @@
 - Microcontroller
     - holds in memory the programmed colour settings (This point does not mean the memory should be retained when device goes off, it only means all the color combinations reside in flash so that they can be activated when device is ON)
     - controls the logic for user to change colour settings
+    - There should be holes in PCB to allow firmware upload / updates
 - Button
     - Turns LED on/off (On press and hold of the button)
     - Sets light to colour selection mode
@@ -67,5 +68,6 @@ Below are 5 strobe patterns we would like LED to be able to flash. Such patterns
 
 ### Reference Product Images
 ![image](https://github.com/eSpark-Consultants/royluo-ledboard/assets/76909080/ed92cbf9-958e-43b8-9786-4598957a4836)
+![image](https://github.com/eSpark-Consultants/royluo-ledboard/assets/76909080/a94bcbbe-d8fa-4adb-a5ec-0fec59902576)
 
 
