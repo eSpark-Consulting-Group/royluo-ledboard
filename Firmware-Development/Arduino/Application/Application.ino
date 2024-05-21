@@ -1,4 +1,5 @@
-const int maxColor = 16;
+#define NO_OF_DELAYS 5
+#define MAX_COLOR 17
 
 const int red = 5;
 const int green = 6;
@@ -7,6 +8,10 @@ const int button = 3;
 
 int counter = 0;
 int buttonState = 0;
+int reading;
+int lastButtonState = 0;
+unsigned long lastDebounceTime = millis();
+unsigned long debounceTime = 50;
 int rgbBrightness = 255;
 bool programRunning = false;
 
@@ -36,101 +41,70 @@ enum RGB_Type {
 };
 
 
-void standardStrobe(bool status) {
-  if (status == true) {
-    rgbWrite(RED, rgbBrightness);
-    delay(100);
-    rgbWrite(RED, 0);
-    delay(100);
-    rgbWrite(BLUE, rgbBrightness);
-    delay(100);
-    rgbWrite(BLUE, 0);
-    delay(100);
-    rgbWrite(GREEN, rgbBrightness);
-    delay(100);
-    rgbWrite(GREEN, 0);
-    delay(100);
-  } else {
-    rgbWrite(RED, 0);
-    rgbWrite(BLUE, 0);
-    rgbWrite(GREEN, 0);
-  }
+struct LedPattern {
+  unsigned long onDelay;
+  unsigned long offDelay;
+};
+
+LedPattern cycleOfpattern[NO_OF_DELAYS] = {
+  { 100, 100 },
+  { 300, 300 },
+  { 50, 100 },
+  { 20, 200 },
+  { 300, 0 },
+};
+
+
+struct rgbColor {
+  int redColor;
+  int greenColor;
+  int blueColor;
+};
+
+rgbColor colorPalette[MAX_COLOR] = {
+  { 0, 0, 0 },
+  { 255, 0, 0 },
+  { 0, 255, 0 },
+  { 0, 0, 255 },
+  { 255, 255, 0 },
+  { 0, 128, 0 },
+  { 255, 165, 0 },
+  { 255, 255, 255 },
+  { 246, 231, 210 },
+  { 255, 0, 255 },
+  { 230, 230, 250 },
+  { 128, 0, 128 },
+  { 64, 224, 208 },
+  { 135, 206, 235 },
+  { 255, 127, 80 },
+  { 34, 139, 34 },
+  { 192, 192, 192 },
+};
+
+void rgbWrite(rgbColor palette) {
+  colorWrite(RED_PIN, palette.redColor);
+  colorWrite(GREEN_PIN, palette.greenColor);
+  colorWrite(BLUE_PIN, palette.blueColor);
 }
 
-void longStrobe(bool status) {
+void rgbPattern(bool status, LedPattern pattern, rgbColor palette) {
   if (status == true) {
-    rgbWrite(RED, rgbBrightness);
-    delay(300);
-    rgbWrite(RED, 0);
-    delay(300);
-    rgbWrite(GREEN, rgbBrightness);
-    delay(300);
-    rgbWrite(GREEN, 0);
-    delay(300);
-    rgbWrite(BLUE, rgbBrightness);
-    delay(300);
-    rgbWrite(BLUE, 0);
-    delay(300);
+    rgbWrite(palette.redColor);
+    delay(pattern.onDelay);
+    rgbWrite(palette[0]);
+    delay(pattern.offDelay);
+    rgbWrite(palette.blueColor);
+    delay(pattern.onDelay);
+    rgbWrite(BLUE, LOW);
+    delay(pattern.offDelay);
+    rgbWrite(GREEN, palette.greenColor);
+    delay(pattern.onDelay);
+    rgbWrite(GREEN, LOW);
+    delay(pattern.offDelay);
   } else {
-    rgbWrite(RED, 0);
-    rgbWrite(BLUE, 0);
-    rgbWrite(GREEN, 0);
-  }
-}
-void dots(bool status) {
-  if (status == true) {
-    rgbWrite(RED, rgbBrightness);
-    delay(50);
-    rgbWrite(RED, 0);
-    delay(100);
-    rgbWrite(GREEN, rgbBrightness);
-    delay(50);
-    rgbWrite(GREEN, 0);
-    delay(100);
-    rgbWrite(BLUE, rgbBrightness);
-    delay(50);
-    rgbWrite(BLUE, 0);
-    delay(100);
-  } else {
-    rgbWrite(RED, 0);
-    rgbWrite(BLUE, 0);
-    rgbWrite(GREEN, 0);
-  }
-}
-
-void flicker(bool status) {
-  if (status == true) {
-    rgbWrite(RED, rgbBrightness);
-    delay(20);
-    rgbWrite(RED, 0);
-    delay(200);
-    rgbWrite(BLUE, rgbBrightness);
-    delay(20);
-    rgbWrite(BLUE, 0);
-    delay(200);
-    rgbWrite(GREEN, rgbBrightness);
-    delay(20);
-    rgbWrite(GREEN, 0);
-    delay(200);
-  } else {
-    rgbWrite(RED, 0);
-    rgbWrite(BLUE, 0);
-    rgbWrite(GREEN, 0);
-  }
-}
-
-void ribbon(bool status) {
-  if (status == true) {
-    rgbWrite(RED, rgbBrightness);
-    delay(300);
-    rgbWrite(BLUE, rgbBrightness);
-    delay(300);
-    rgbWrite(GREEN, rgbBrightness);
-    delay(300);
-  } else {
-    rgbWrite(RED, 0);
-    rgbWrite(BLUE, 0);
-    rgbWrite(GREEN, 0);
+    rgbWrite(RED, LOW);
+    rgbWrite(BLUE, LOW);
+    rgbWrite(GREEN, LOW);
   }
 }
 
@@ -150,113 +124,6 @@ void colorWrite(Color_Type color, int brightness) {
   }
 }
 
-
-void rgbWrite(RGB_Type pattern, int brightness) {
-  switch (pattern) {
-    case RED:
-      colorWrite(RED_PIN, brightness);
-      colorWrite(GREEN_PIN, LOW);
-      colorWrite(BLUE_PIN, LOW);
-      break;
-    case BLUE:
-      colorWrite(BLUE_PIN, brightness);
-      colorWrite(RED_PIN, LOW);
-      colorWrite(GREEN_PIN, LOW);
-      break;
-    case GREEN:
-      colorWrite(RED_PIN, LOW);
-      colorWrite(GREEN_PIN, brightness);
-      colorWrite(BLUE_PIN, LOW);
-      break;
-    case YELLOW:
-      colorWrite(RED_PIN, brightness);
-      colorWrite(GREEN_PIN, brightness);
-      colorWrite(BLUE_PIN, LOW);
-      break;
-    case LIME:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, LOW);
-        colorWrite(GREEN_PIN, 128);
-        colorWrite(BLUE_PIN, LOW);
-      }
-      break;
-    case ORANGE:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, brightness);
-        colorWrite(GREEN_PIN, 165);
-        colorWrite(BLUE_PIN, LOW);
-      }
-      break;
-    case WHITE:
-      colorWrite(RED_PIN, brightness);
-      colorWrite(GREEN_PIN, brightness);
-      colorWrite(BLUE_PIN, brightness);
-      break;
-    case WARMWHITE:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, 246);
-        colorWrite(GREEN_PIN, 231);
-        colorWrite(BLUE_PIN, 210);
-      }
-      break;
-    case MAGENTA:
-      colorWrite(RED_PIN, brightness);
-      colorWrite(GREEN_PIN, LOW);
-      colorWrite(BLUE_PIN, brightness);
-      break;
-    case LAVENDER:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, 230);
-        colorWrite(GREEN_PIN, 230);
-        colorWrite(BLUE_PIN, 250);
-      }
-      break;
-    case PURPLE:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, 128);
-        colorWrite(GREEN_PIN, LOW);
-        colorWrite(BLUE_PIN, 128);
-      }
-      break;
-    case TURQUOISE:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, 64);
-        colorWrite(GREEN_PIN, 224);
-        colorWrite(BLUE_PIN, 208);
-      }
-      break;
-    case SKY_BLUE:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, 135);
-        colorWrite(GREEN_PIN, 206);
-        colorWrite(BLUE_PIN, 235);
-      }
-      break;
-    case CORAL:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, brightness);
-        colorWrite(GREEN_PIN, 127);
-        colorWrite(BLUE_PIN, 80);
-      }
-      break;
-    case FOREST_GREEN:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, 34);
-        colorWrite(GREEN_PIN, 139);
-        colorWrite(BLUE_PIN, 34);
-      }
-      break;
-    case SILVER:
-      if (brightness > 0) {
-        colorWrite(RED_PIN, 192);
-        colorWrite(GREEN_PIN, 192);
-        colorWrite(BLUE_PIN, 192);
-      }
-      break;
-    default:
-      break;
-  }
-}
 
 void setup() {
   Serial.begin(9600);
@@ -283,45 +150,50 @@ void loop() {
       counter = 0;
     }
   }
-
   if (programRunning) {
 
-    if (buttonState == HIGH) {
-      counter++;
-    } else {
-      if (counter == 1) {
-        Serial.print("Im in standardStrobe: ");
-        Serial.println(counter);
-        ribbon(false);
-        standardStrobe(true);
-      } else if (counter == 2) {
-        Serial.print("Im in longStrobe: ");
-        Serial.println(counter);
-        standardStrobe(false);
-        longStrobe(true);
-      } else if (counter == 3) {
-        Serial.print("Im in dots: ");
-        Serial.println(counter);
-        longStrobe(false);
-        dots(true);
-      } else if (counter == 4) {
-        Serial.print("Im in flicker: ");
-        Serial.println(counter);
-        dots(false);
-        flicker(true);
-      } else if (counter == 5) {
-        Serial.print("Im in ribbon: ");
-        Serial.println(counter);
-        flicker(false);
-        ribbon(true);
+    if (reading != lastButtonState) {
+      lastDebounceTime = millis();
+    }
+    if ((millis() - lastDebounceTime) > debounceTime) {
+      if (buttonState != reading) {
+        reading = buttonState;
+        if (reading == HIGH) {
+          counter++;
+          Serial.print("Initial counter is: ");
+          Serial.println(counter);
+        }
       } else {
-        counter = 1;
+        if (counter == 1) {
+          Serial.print("Im in StandardStrobe: ");
+          Serial.println(counter);
+          rgbPattern(true, cycleOfpattern[0]);
+        } else if (counter == 2) {
+          Serial.print("Im in longStrobe: ");
+          Serial.println(counter);
+          rgbPattern(true, cycleOfpattern[1]);
+        } else if (counter == 3) {
+          Serial.print("Im in dots: ");
+          Serial.println(counter);
+          rgbPattern(true, cycleOfpattern[2]);
+        } else if (counter == 4) {
+          Serial.print("Im in flicker: ");
+          Serial.println(counter);
+          rgbPattern(true, cycleOfpattern[3]);
+        } else if (counter == 5) {
+          Serial.print("Im in ribbon: ");
+          Serial.println(counter);
+          rgbPattern(true, cycleOfpattern[4]);
+        } else {
+          counter = 1;
+        }
       }
+      lastButtonState = buttonState;
     }
 
   } else {
-    for (int i = 0; i < maxColor; i++)
-      rgbWrite(i, LOW);
-    delay(1000);
+    for (int i = 0; i < MAX_COLOR; i++)
+      // rgbWrite(i, LOW);
+      delay(1000);
   }
 }
