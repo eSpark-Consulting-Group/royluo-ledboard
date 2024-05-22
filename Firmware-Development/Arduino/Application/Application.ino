@@ -1,19 +1,31 @@
-#define NO_OF_DELAYS 5
+#define NO_OF_PATTERN 5
+#define NO_OF_COLORS 3
 #define MAX_COLOR 17
+
+unsigned long lastDebounceTime = millis();
+unsigned long debounceTime = 50;
 
 const int red = 5;
 const int green = 6;
 const int blue = 7;
 const int button = 3;
 
+int reading;
 int counter = 0;
 int buttonState = 0;
-int reading;
-int lastButtonState = 0;
-unsigned long lastDebounceTime = millis();
-unsigned long debounceTime = 50;
 int rgbBrightness = 255;
+int lastButtonState = 0;
+
 bool programRunning = false;
+
+enum State_type {
+  LED_ON = 1,
+  DELAY_START = 2,
+  LED_OFF = 3,
+  DELAY_END = 4
+};
+
+static State_type state = LED_ON;
 
 enum Color_Type {
   RED_PIN = 1,
@@ -41,24 +53,20 @@ enum RGB_Type {
 };
 
 
-struct LedPattern {
+struct LedPatternDelay {
   unsigned long onDelay;
   unsigned long offDelay;
 };
 
-LedPattern cycleOfpattern[NO_OF_DELAYS] = {
-  { 100, 100 },
-  { 300, 300 },
-  { 50, 100 },
-  { 20, 200 },
-  { 300, 0 },
-};
-
-
 struct rgbColor {
   int redColor;
-  int greenColor;
   int blueColor;
+  int greenColor;
+};
+
+struct LedPatterns {
+  rgbColor colors[NO_OF_COLORS + 1];
+  LedPatternDelay patterndelays[NO_OF_PATTERN];
 };
 
 rgbColor colorPalette[MAX_COLOR] = {
@@ -81,32 +89,64 @@ rgbColor colorPalette[MAX_COLOR] = {
   { 192, 192, 192 },
 };
 
+LedPatterns cycleOfpattern = {
+  .colors = { colorPalette[0], colorPalette[1], colorPalette[2], colorPalette[3] },
+  .patterndelays = {
+    { 150, 150 },
+    { 350, 350 },
+    { 50, 150 },
+    { 20, 250 },
+    { 400, 0 },
+  }
+};
+
+
 void rgbWrite(rgbColor palette) {
   colorWrite(RED_PIN, palette.redColor);
   colorWrite(GREEN_PIN, palette.greenColor);
   colorWrite(BLUE_PIN, palette.blueColor);
 }
 
-void rgbPattern(bool status, LedPattern pattern, rgbColor palette) {
-  if (status == true) {
-    rgbWrite(palette.redColor);
-    delay(pattern.onDelay);
-    rgbWrite(palette[0]);
-    delay(pattern.offDelay);
-    rgbWrite(palette.blueColor);
-    delay(pattern.onDelay);
-    rgbWrite(BLUE, LOW);
-    delay(pattern.offDelay);
-    rgbWrite(GREEN, palette.greenColor);
-    delay(pattern.onDelay);
-    rgbWrite(GREEN, LOW);
-    delay(pattern.offDelay);
-  } else {
-    rgbWrite(RED, LOW);
-    rgbWrite(BLUE, LOW);
-    rgbWrite(GREEN, LOW);
+
+void rgbPattern(LedPatterns pattern, LedPatternDelay patterndelay) {
+
+  static unsigned long previousMillis;
+  unsigned long currentMillis;
+
+  static int patternStep = 1;
+  currentMillis = millis();
+
+  switch (state) {
+    case LED_ON:
+      rgbWrite(pattern.colors[patternStep]);
+      previousMillis = currentMillis;
+      state = DELAY_START;
+      break;
+    case DELAY_START:
+      if (currentMillis - previousMillis >= patterndelay.onDelay) {
+        state = LED_OFF;
+      }
+      break;
+    case LED_OFF:
+      rgbWrite(pattern.colors[0]);
+      previousMillis = currentMillis;
+      state = DELAY_END;
+      break;
+    case DELAY_END:
+      if (currentMillis - previousMillis >= patterndelay.offDelay) {
+        state = LED_ON;
+        patternStep++;
+        if(patternStep > NO_OF_COLORS)
+        {
+          patternStep = 1;
+        }
+      }
+      break;
+    default:
+      break;
   }
 }
+
 
 void colorWrite(Color_Type color, int brightness) {
   switch (color) {
@@ -150,8 +190,8 @@ void loop() {
       counter = 0;
     }
   }
-  if (programRunning) {
 
+  if (programRunning) {
     if (reading != lastButtonState) {
       lastDebounceTime = millis();
     }
@@ -160,30 +200,15 @@ void loop() {
         reading = buttonState;
         if (reading == HIGH) {
           counter++;
+          state = LED_ON;
           Serial.print("Initial counter is: ");
           Serial.println(counter);
         }
       } else {
-        if (counter == 1) {
-          Serial.print("Im in StandardStrobe: ");
+        if (counter >= 1 && counter <= 5) {
+          Serial.print("Im in pattern: ");
           Serial.println(counter);
-          rgbPattern(true, cycleOfpattern[0]);
-        } else if (counter == 2) {
-          Serial.print("Im in longStrobe: ");
-          Serial.println(counter);
-          rgbPattern(true, cycleOfpattern[1]);
-        } else if (counter == 3) {
-          Serial.print("Im in dots: ");
-          Serial.println(counter);
-          rgbPattern(true, cycleOfpattern[2]);
-        } else if (counter == 4) {
-          Serial.print("Im in flicker: ");
-          Serial.println(counter);
-          rgbPattern(true, cycleOfpattern[3]);
-        } else if (counter == 5) {
-          Serial.print("Im in ribbon: ");
-          Serial.println(counter);
-          rgbPattern(true, cycleOfpattern[4]);
+          rgbPattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
         } else {
           counter = 1;
         }
@@ -192,8 +217,7 @@ void loop() {
     }
 
   } else {
-    for (int i = 0; i < MAX_COLOR; i++)
-      // rgbWrite(i, LOW);
-      delay(1000);
+    rgbWrite(colorPalette[0]);
+    delay(1000);
   }
 }
