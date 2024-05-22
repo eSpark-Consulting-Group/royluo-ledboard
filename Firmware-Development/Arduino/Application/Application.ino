@@ -11,12 +11,13 @@ const int blue = 7;
 const int button = 3;
 
 int reading;
+int count = 0;
 int counter = 0;
 int buttonState = 0;
 int rgbBrightness = 255;
 int lastButtonState = 0;
 
-bool programRunning = false;
+bool programRunning = true;
 
 enum State_type {
   LED_ON = 1,
@@ -136,8 +137,7 @@ void rgbPattern(LedPatterns pattern, LedPatternDelay patterndelay) {
       if (currentMillis - previousMillis >= patterndelay.offDelay) {
         state = LED_ON;
         patternStep++;
-        if(patternStep > NO_OF_COLORS)
-        {
+        if (patternStep > NO_OF_COLORS) {
           patternStep = 1;
         }
       }
@@ -188,36 +188,70 @@ void loop() {
     if (T_Time >= 2000) {
       programRunning = !programRunning;
       counter = 0;
+      count++;
     }
   }
-
-  if (programRunning) {
-    if (reading != lastButtonState) {
-      lastDebounceTime = millis();
-    }
-    if ((millis() - lastDebounceTime) > debounceTime) {
-      if (buttonState != reading) {
-        reading = buttonState;
-        if (reading == HIGH) {
-          counter++;
-          state = LED_ON;
-          Serial.print("Initial counter is: ");
-          Serial.println(counter);
-        }
-      } else {
-        if (counter >= 1 && counter <= 5) {
-          Serial.print("Im in pattern: ");
-          Serial.println(counter);
-          rgbPattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
+  if (count == 0) {
+    if (programRunning) {
+      if (reading != lastButtonState) {
+        lastDebounceTime = millis();
+      }
+      if ((millis() - lastDebounceTime) > debounceTime) {
+        if (buttonState != reading) {
+          reading = buttonState;
+          if (reading == HIGH) {
+            counter++;
+            state = LED_ON;
+            Serial.print("Initial counter is: ");
+            Serial.println(counter);
+          }
         } else {
-          counter = 1;
+          if (counter >= 1 && counter <= 5) {
+            Serial.print("Im in pattern: ");
+            Serial.println(counter);
+            rgbPattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
+          }
+          if (counter > 5) {
+            counter = 1;
+          }
+        }
+        lastButtonState = buttonState;
+      }
+    }
+  } 
+  ////////////////////////////////////////
+  if (count == 2) {
+    Serial.print("Im in count: ");
+    Serial.println(count);
+    if (programRunning) {
+      rgbWrite(colorPalette[3]);
+      delay(2000);
+      rgbWrite(colorPalette[1]);
+      programRunning = !programRunning;
+      counter = 0;
+    }
+    if (!programRunning) {
+      if (buttonState == HIGH) {
+        counter++;
+        if (counter >= 1 && counter <= MAX_COLOR) {
+          rgbWrite(colorPalette[counter]);
+        } else {
+          counter = 0;
         }
       }
-      lastButtonState = buttonState;
     }
-
-  } else {
+  } 
+  ///////////////////////////////////////////
+  if(count != 0 && count != 2)
+  {
     rgbWrite(colorPalette[0]);
-    delay(1000);
+    if(count == 3)
+    {
+      buttonState = digitalRead(button);
+      if(buttonState == HIGH)
+      {
+         count = 0;
+      }
+    }
   }
 }
