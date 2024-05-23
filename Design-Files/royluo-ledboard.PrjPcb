@@ -82,6 +82,10 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=MIRXERNF
 
+[GeneratedDocument1]
+DocumentPath=Project Outputs for royluo-ledboard\Design Rule Check - royluo-ledboard.html
+DItemRevisionGUID=
+
 [Configuration1]
 Name=Sources
 ParameterCount=0
