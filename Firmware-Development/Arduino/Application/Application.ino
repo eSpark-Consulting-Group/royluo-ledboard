@@ -13,44 +13,60 @@ const int button = 3;
 int reading;
 int count = 0;
 int counter = 0;
-int buttonState = 0;
+// int buttonState = 0;
 int rgbBrightness = 255;
 int lastButtonState = 0;
 
-bool programRunning = true;
+bool programRunning = false;
 
-enum State_type {
-  LED_ON = 1,
-  DELAY_START = 2,
-  LED_OFF = 3,
-  DELAY_END = 4
+enum ButtonPress {
+  SINGLE_PRESS,
+  HOLD_PRESS,
+  OFF
 };
 
-static State_type state = LED_ON;
+static ButtonPress btnStatus = OFF;
 
-enum Color_Type {
-  RED_PIN = 1,
-  GREEN_PIN = 2,
-  BLUE_PIN = 3
+enum ApplicationState {
+  ON_STATE,
+  OFF_STATE,
+  COLOR_SELECTION_STATE
 };
 
-enum RGB_Type {
+static ApplicationState status = OFF_STATE;
+
+enum PatternState {
+  LED_ON_STATE = 1,
+  DELAY_START_STATE = 2,
+  LED_OFF_STATE = 3,
+  DELAY_END_STATE = 4
+};
+
+static PatternState state = LED_ON_STATE;
+
+enum ColorType {
+  RED_PIN,
+  GREEN_PIN,
+  BLUE_PIN
+};
+
+enum RGBType {
   RED = 1,
-  BLUE = 2,
-  GREEN = 3,
-  YELLOW = 4,
-  LIME = 5,
-  ORANGE = 6,
-  WHITE = 7,
-  WARMWHITE = 8,
-  MAGENTA = 9,
-  LAVENDER = 10,
-  PURPLE = 11,
-  TURQUOISE = 12,
-  SKY_BLUE = 13,
-  CORAL = 14,
-  FOREST_GREEN = 15,
-  SILVER = 16
+  BLUE,
+  GREEN,
+  YELLOW,
+  LIME,
+  ORANGE,
+  WHITE,
+  WARMWHITE,
+  MAGENTA,
+  LAVENDE,
+  PURPLE,
+  TURQUOISE,
+  SKY_BLUE,
+  CORAL,
+  FOREST_GREEN,
+  SILVER
 };
 
 
@@ -61,8 +77,8 @@ struct LedPatternDelay {
 
 struct rgbColor {
   int redColor;
-  int blueColor;
   int greenColor;
+  int blueColor;
 };
 
 struct LedPatterns {
@@ -73,8 +89,8 @@ struct LedPatterns {
 rgbColor colorPalette[MAX_COLOR] = {
   { 0, 0, 0 },
   { 255, 0, 0 },
-  { 0, 255, 0 },
   { 0, 0, 255 },
+  { 0, 255, 0 },
   { 255, 255, 0 },
   { 0, 128, 0 },
   { 255, 165, 0 },
@@ -118,24 +134,24 @@ void rgbPattern(LedPatterns pattern, LedPatternDelay patterndelay) {
   currentMillis = millis();
 
   switch (state) {
-    case LED_ON:
+    case LED_ON_STATE:
       rgbWrite(pattern.colors[patternStep]);
       previousMillis = currentMillis;
-      state = DELAY_START;
+      state = DELAY_START_STATE;
       break;
-    case DELAY_START:
+    case DELAY_START_STATE:
       if (currentMillis - previousMillis >= patterndelay.onDelay) {
-        state = LED_OFF;
+        state = LED_OFF_STATE;
       }
       break;
-    case LED_OFF:
+    case LED_OFF_STATE:
       rgbWrite(pattern.colors[0]);
       previousMillis = currentMillis;
-      state = DELAY_END;
+      state = DELAY_END_STATE;
       break;
-    case DELAY_END:
+    case DELAY_END_STATE:
       if (currentMillis - previousMillis >= patterndelay.offDelay) {
-        state = LED_ON;
+        state = LED_ON_STATE;
         patternStep++;
         if (patternStep > NO_OF_COLORS) {
           patternStep = 1;
@@ -148,7 +164,7 @@ void rgbPattern(LedPatterns pattern, LedPatternDelay patterndelay) {
 }
 
 
-void colorWrite(Color_Type color, int brightness) {
+void colorWrite(ColorType color, int brightness) {
   switch (color) {
     case RED_PIN:
       analogWrite(red, brightness);
@@ -164,6 +180,98 @@ void colorWrite(Color_Type color, int brightness) {
   }
 }
 
+int buttonState() {
+
+  int btnState = digitalRead(button);
+
+  if (btnState == HIGH) {
+
+    unsigned long pressStartTime = millis();
+    while (digitalRead(button) == HIGH && (millis() - pressStartTime) <= 2000) {
+    }
+
+    unsigned long T_Time = millis() - pressStartTime;
+    if (T_Time >= 2000) {
+      programRunning = !programRunning;
+      if (programRunning) {
+        btnStatus = HOLD_PRESS;
+        count = 0;
+      } else if(!programRunning){
+        btnStatus = OFF;
+      }
+    } else {
+      if (reading != lastButtonState) {
+        lastDebounceTime = millis();
+      }
+      if ((millis() - lastDebounceTime) > debounceTime) {
+        if (btnState != reading) {
+          reading = btnState;
+          if (reading == HIGH) {
+            btnStatus = SINGLE_PRESS;
+            programRunning = true;
+          }
+        }
+      }
+      lastButtonState = btnState;
+    }
+
+    if (btnStatus == SINGLE_PRESS) {
+      state = LED_ON_STATE;
+      status = ON_STATE;
+      counter++;
+    } else if (btnStatus == HOLD_PRESS) {
+      state = LED_ON_STATE;
+      status = COLOR_SELECTION_STATE;
+      counter++;
+    }
+  } else if (btnStatus == OFF) {
+    status = OFF_STATE;
+    count = 0;
+    counter = 0;
+  }
+
+
+  return btnStatus;
+}
+
+void rgbOffState() {
+  if (buttonState() == OFF) {
+    rgbWrite(colorPalette[0]);
+    counter = 0;
+  }
+}
+
+void rgbPatternState() {
+  if (buttonState() == SINGLE_PRESS) {
+    if (counter >= 1 && counter <= NO_OF_PATTERN) {
+      Serial.print("Im in pattern: ");
+      Serial.println(counter);
+      rgbPattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
+    }
+    if (counter > NO_OF_PATTERN) {
+      counter = 1;
+    }
+  }
+}
+
+void colorState() {
+  if (buttonState() == HOLD_PRESS) {
+    if (count == 0) {
+      rgbWrite(colorPalette[3]);
+      delay(2000);
+      rgbWrite(colorPalette[1]);
+      count = 1;
+    }
+    if (count == 1) {
+      if (counter >= MAX_COLOR) {
+        counter = 1;
+      }
+      Serial.print("Counter: ");
+      Serial.println(counter);
+      rgbWrite(colorPalette[counter]);
+    }
+  }
+}
 
 void setup() {
   Serial.begin(9600);
@@ -176,82 +284,19 @@ void setup() {
 
 void loop() {
 
-  buttonState = digitalRead(button);
+  buttonState();
 
-  if (buttonState == HIGH) {
-    unsigned long pressStartTime = millis();
-    while (digitalRead(button) == HIGH && (millis() - pressStartTime) <= 2000) {
-    }
-
-    unsigned long T_Time = millis() - pressStartTime;
-
-    if (T_Time >= 2000) {
-      programRunning = !programRunning;
-      counter = 0;
-      count++;
-    }
-  }
-  if (count == 0) {
-    if (programRunning) {
-      if (reading != lastButtonState) {
-        lastDebounceTime = millis();
-      }
-      if ((millis() - lastDebounceTime) > debounceTime) {
-        if (buttonState != reading) {
-          reading = buttonState;
-          if (reading == HIGH) {
-            counter++;
-            state = LED_ON;
-            Serial.print("Initial counter is: ");
-            Serial.println(counter);
-          }
-        } else {
-          if (counter >= 1 && counter <= 5) {
-            Serial.print("Im in pattern: ");
-            Serial.println(counter);
-            rgbPattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
-          }
-          if (counter > 5) {
-            counter = 1;
-          }
-        }
-        lastButtonState = buttonState;
-      }
-    }
-  } 
-  ////////////////////////////////////////
-  if (count == 2) {
-    Serial.print("Im in count: ");
-    Serial.println(count);
-    if (programRunning) {
-      rgbWrite(colorPalette[3]);
-      delay(2000);
-      rgbWrite(colorPalette[1]);
-      programRunning = !programRunning;
-      counter = 0;
-    }
-    if (!programRunning) {
-      if (buttonState == HIGH) {
-        counter++;
-        if (counter >= 1 && counter <= MAX_COLOR) {
-          rgbWrite(colorPalette[counter]);
-        } else {
-          counter = 0;
-        }
-      }
-    }
-  } 
-  ///////////////////////////////////////////
-  if(count != 0 && count != 2)
-  {
-    rgbWrite(colorPalette[0]);
-    if(count == 3)
-    {
-      buttonState = digitalRead(button);
-      if(buttonState == HIGH)
-      {
-         count = 0;
-      }
-    }
+  switch (status) {
+    case ON_STATE:
+      rgbPatternState();
+      break;
+    case OFF_STATE:
+      rgbOffState();
+      break;
+    case COLOR_SELECTION_STATE:
+      colorState();
+      break;
+    default:
+      break;
   }
 }
