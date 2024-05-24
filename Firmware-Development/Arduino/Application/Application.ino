@@ -7,7 +7,6 @@ const int green = 6;
 const int blue = 7;
 const int button = 3;
 
-
 enum SetupStatus {
   SETUP_STATE,
   LOOP_STATE,
@@ -41,26 +40,6 @@ enum ColorType {
   GREEN_PIN,
   BLUE_PIN
 };
-
-// enum RGBType {
-//   RED = 1,
-//   BLUE,
-//   GREEN,
-//   YELLOW,
-//   LIME,
-//   ORANGE,
-//   WHITE,
-//   WARMWHITE,
-//   MAGENTA,
-//   LAVENDE,
-//   PURPLE,
-//   TURQUOISE,
-//   SKY_BLUE,
-//   CORAL,
-//   FOREST_GREEN,
-//   SILVER
-// };
-
 
 struct LedPatternDelay {
   unsigned long onDelay;
@@ -228,68 +207,92 @@ void rgbOffState() {
 
 void rgbPatternState() {
 
+  static SetupStatus functionState = SETUP_STATE;
   static int counter = 1;
 
-  if (counter >= 1 && counter <= NO_OF_PATTERN) {
-    Serial.print("Im in pattern: ");
-    Serial.println(counter);
-    rgbPattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
-  }
+  switch (functionState) {
+    case SETUP_STATE:
+      rgbWrite(colorPalette[0]);
+      if (buttonState() == OFF) {
+        functionState = LOOP_STATE;
+      }
+      break;
 
-  ButtonPress btnStatus = buttonState();
-  if (btnStatus == SINGLE_PRESS) {
-    counter++;
-    if (counter > NO_OF_PATTERN) {
-      counter = 1;
-    }
-  } else if (btnStatus == HOLD_PRESS) {
-    status = OFF_STATE;
-    counter = 1;
-    Serial.println("in off state");
+    case LOOP_STATE:
+      if (counter >= 1 && counter <= NO_OF_PATTERN) {
+        Serial.print("Im in pattern: ");
+        Serial.println(counter);
+        rgbPattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
+      }
+      ButtonPress btnStatus = buttonState();
+      if (btnStatus == SINGLE_PRESS) {
+        counter++;
+        if (counter > NO_OF_PATTERN) {
+          counter = 1;
+        }
+      } else if (btnStatus == HOLD_PRESS) {
+        status = OFF_STATE;
+        functionState = SETUP_STATE;
+        counter = 1;
+        Serial.println("in off state");
+      }
+      break;
   }
 }
 
 void colorState() {
-  ButtonPress btnStatus = buttonState();
-  static int count = 0;
+
+  static SetupStatus functionState = SETUP_STATE;
+
   static int num = 0;
   static int counter = 0;
 
-  if (btnStatus == SINGLE_PRESS) {
-    counter++;
-    if (counter >= MAX_COLOR) {
-      counter = 1;
-    }
-    Serial.print("Counter: ");
-    Serial.println(counter);
-    rgbWrite(colorPalette[counter]);
-
-  } else if (btnStatus == HOLD_PRESS) {
-    num++;
-    if (num <= 3) {
-      cycleOfpattern.colors[num] = colorPalette[counter];
-      rgbWrite(colorPalette[0]);
-      delay(500);
-      rgbWrite(colorPalette[counter]);
-      delay(500);
-      rgbWrite(colorPalette[1]);
-      counter = 1;
-      Serial.print(num);
-      Serial.println(" color selected");
-      if (num == 3) {
-        num = 0;
-        counter = 0;
-        status = ON_STATE;
+  switch (functionState) {
+    case SETUP_STATE:
+      if (counter == 0) {
+        rgbWrite(colorPalette[3]);
+        delay(2000);
+        counter = 1;
+        rgbWrite(colorPalette[counter]);
       }
-    }
-  }
+      if (buttonState() == OFF) {
+        functionState = LOOP_STATE;
+      }
+      break;
 
-  if (count == 0) {
-    rgbWrite(colorPalette[3]);
-    delay(2000);
-    counter = 1;
-    rgbWrite(colorPalette[counter]);
-    count = 1;
+    case LOOP_STATE:
+      ButtonPress btnStatus = buttonState();
+
+      if (btnStatus == SINGLE_PRESS) {
+        counter++;
+        if (counter >= MAX_COLOR) {
+          counter = 1;
+        }
+        Serial.print("Counter: ");
+        Serial.println(counter);
+        rgbWrite(colorPalette[counter]);
+
+      } else if (btnStatus == HOLD_PRESS) {
+        num++;
+        if (num <= NO_OF_COLORS) {
+          cycleOfpattern.colors[num] = colorPalette[counter];
+          rgbWrite(colorPalette[0]);
+          delay(500);
+          rgbWrite(colorPalette[counter]);
+          delay(500);
+          rgbWrite(colorPalette[1]);
+          counter = 1;
+          Serial.print(num);
+          Serial.println(" color selected");
+          functionState = SETUP_STATE;
+          if (num == NO_OF_COLORS) {
+            num = 0;
+            counter = 0;
+            status = ON_STATE;            
+          }
+        }
+      }
+      break;
   }
 }
 
