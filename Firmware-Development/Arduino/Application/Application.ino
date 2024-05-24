@@ -330,10 +330,15 @@ void setup() {
   pinMode(blue, OUTPUT);
   pinMode(button, INPUT);
 
-  for (int i = 0; i < NO_OF_COLORS; i++) 
-  {
+  for (int i = 0; i < NO_OF_COLORS; i++) {
     value = EEPROM.read(i);
-    cycleOfpattern.colors[i+1] = colorPalette[value];
+    if (value > 0 && value <= 16) {
+      cycleOfpattern.colors[i + 1] = colorPalette[value];
+    }
+    else
+    {
+      cycleOfpattern.colors[i+1] = colorPalette[i+1];
+    }
   }
 }
 
