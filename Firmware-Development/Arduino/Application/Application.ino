@@ -1,3 +1,5 @@
+#include <EEPROM.h>
+
 #define NO_OF_PATTERN 5
 #define NO_OF_COLORS 3
 #define MAX_COLOR 17
@@ -6,6 +8,26 @@ const int red = 5;
 const int green = 6;
 const int blue = 7;
 const int button = 3;
+
+
+// enum RGBType {
+//   RED = 1,
+//   BLUE,
+//   GREEN,
+//   YELLOW,
+//   LIME,
+//   ORANGE,
+//   WHITE,
+//   WARMWHITE,
+//   MAGENTA,
+//   LAVENDE,
+//   PURPLE,
+//   TURQUOISE,
+//   SKY_BLUE,
+//   CORAL,
+//   FOREST_GREEN,
+//   SILVER
+// };
 
 enum SetupStatus {
   SETUP_STATE,
@@ -281,6 +303,7 @@ void colorState() {
           rgbWrite(colorPalette[counter]);
           delay(500);
           rgbWrite(colorPalette[1]);
+          EEPROM.write(num - 1, counter);
           counter = 1;
           Serial.print(num);
           Serial.println(" color selected");
@@ -288,7 +311,7 @@ void colorState() {
           if (num == NO_OF_COLORS) {
             num = 0;
             counter = 0;
-            status = ON_STATE;            
+            status = ON_STATE;
           }
         }
       }
@@ -297,12 +320,21 @@ void colorState() {
 }
 
 void setup() {
+
+  int value = 0;
+
   Serial.begin(9600);
 
   pinMode(red, OUTPUT);
   pinMode(green, OUTPUT);
   pinMode(blue, OUTPUT);
   pinMode(button, INPUT);
+
+  for (int i = 0; i < NO_OF_COLORS; i++) 
+  {
+    value = EEPROM.read(i);
+    cycleOfpattern.colors[i+1] = colorPalette[value];
+  }
 }
 
 void loop() {
