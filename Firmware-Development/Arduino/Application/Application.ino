@@ -8,10 +8,10 @@ const int blue = 7;
 const int button = 3;
 
 
- enum SetupStatus{
+enum SetupStatus {
   SETUP_STATE,
   LOOP_STATE,
- };
+};
 
 enum ButtonPress {
   SINGLE_PRESS,
@@ -205,16 +205,15 @@ int buttonState() {
 void rgbOffState() {
   static SetupStatus functionState = SETUP_STATE;
 
-  switch (functionState)
-  {
-    case SETUP_STATE: 
+  switch (functionState) {
+    case SETUP_STATE:
       rgbWrite(colorPalette[0]);
-      if (buttonState() == OFF){
+      if (buttonState() == OFF) {
         functionState = LOOP_STATE;
       }
       break;
 
-    case LOOP_STATE: 
+    case LOOP_STATE:
       ButtonPress btnStatus = buttonState();
       if (btnStatus == SINGLE_PRESS) {
         status = ON_STATE;
@@ -223,9 +222,8 @@ void rgbOffState() {
         status = COLOR_SELECTION_STATE;
         functionState = SETUP_STATE;
       }
-    break;
+      break;
   }
-  
 }
 
 void rgbPatternState() {
@@ -244,20 +242,20 @@ void rgbPatternState() {
     if (counter > NO_OF_PATTERN) {
       counter = 1;
     }
-  }
-  else if (btnStatus == HOLD_PRESS)
-  {
-     status = OFF_STATE;
-     Serial.println("in off state");
+  } else if (btnStatus == HOLD_PRESS) {
+    status = OFF_STATE;
+    counter = 1;
+    Serial.println("in off state");
   }
 }
 
 void colorState() {
   ButtonPress btnStatus = buttonState();
   static int count = 0;
+  static int num = 0;
   static int counter = 0;
-  if(btnStatus == SINGLE_PRESS)
-  {
+
+  if (btnStatus == SINGLE_PRESS) {
     counter++;
     if (counter >= MAX_COLOR) {
       counter = 1;
@@ -265,10 +263,25 @@ void colorState() {
     Serial.print("Counter: ");
     Serial.println(counter);
     rgbWrite(colorPalette[counter]);
-  }
-  else if(btnStatus == HOLD_PRESS)
-  {
 
+  } else if (btnStatus == HOLD_PRESS) {
+    num++;
+    if (num <= 3) {
+      cycleOfpattern.colors[num] = colorPalette[counter];
+      rgbWrite(colorPalette[0]);
+      delay(500);
+      rgbWrite(colorPalette[counter]);
+      delay(500);
+      rgbWrite(colorPalette[1]);
+      counter = 1;
+      Serial.print(num);
+      Serial.println(" color selected");
+      if (num == 3) {
+        num = 0;
+        counter = 0;
+        status = ON_STATE;
+      }
+    }
   }
 
   if (count == 0) {
