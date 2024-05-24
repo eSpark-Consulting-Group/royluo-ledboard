@@ -1,6 +1,0 @@
-Removed Pin From Net: NetName=GND Pin=J1-2
-Change Component Footprint: Designator=J1 Old Footprint=502-3 New Footprint=CR1220-2CELL
-Change Component Comment : Designator=J1 Old Comment=502-3 New Comment=CR1220-2CELL
-Change component parameters: Designator = "J1" ("J1"); Footprint = "502-3"; UniqueID = "\XDMDQRQC" ("\XDMDQRQC")
-Added Pin To Net: NetName=+6V Pin=J1-2
-Added Pin To Net: NetName=GND Pin=J1-3
