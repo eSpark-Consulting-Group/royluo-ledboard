@@ -1,14 +1,21 @@
-#include "Arduino.h"             
+#include "Arduino.h"    
 #include <EEPROM.h>
+#include <Adafruit_NeoPixel.h>
+#ifdef __AVR__
+#include <avr/power.h>
+#endif
 
 #define MAX_COLOR 17
 #define NO_OF_PATTERN 5
 #define NO_OF_COLORS 3
 
-#define RED 5
-#define GREEN 6
-#define BLUE 7
+#define LED 0
+#define PIN 6
 #define BUTTON 3
+
+#define NUMPIXELS 1
+
+extern Adafruit_NeoPixel pixels;
 
 enum SetupStatus {
   SETUP_STATE,
@@ -20,6 +27,7 @@ enum ApplicationState {
   OFF_STATE,
   COLOR_SELECTION_STATE
 };
+
 
 
 

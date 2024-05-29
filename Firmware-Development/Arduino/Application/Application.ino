@@ -2,17 +2,20 @@
 
 ApplicationState status = OFF_STATE;
 
-RgbAddressableLed rgb(RED, GREEN, BLUE);
+RgbAddressableLed rgb(PIN);
+
 
 void setup() {
 
   Serial.begin(9600);
 
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  pinMode(BLUE, OUTPUT);
-  pinMode(BUTTON, INPUT);
+#if defined(__AVR_ATtiny85__) && (F_CPU == 16000000)
+  clock_prescale_set(clock_div_1);
+#endif
 
+  pixels.begin();
+
+  pinMode(BUTTON, INPUT);
 
   char royLuo[7] = "Roy Luo";
 
@@ -33,9 +36,8 @@ void setup() {
     for (int j = 0; j < 7; j++) {
       EEPROM.write(j + 3, royLuo[j]);
     }
-    for(int i = 0; i < NO_OF_COLORS; i++)
-    {
-      EEPROM.write(i, i+1);
+    for (int i = 0; i < NO_OF_COLORS; i++) {
+      EEPROM.write(i, i + 1);
     }
   }
 

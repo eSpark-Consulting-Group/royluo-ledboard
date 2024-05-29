@@ -32,14 +32,10 @@ struct LedPatterns {
 
 
 class RgbAddressableLed {
-  int redLed;
-  int greenLed;
-  int blueLed;
+  int rgbPin;
 public:
-  RgbAddressableLed(int r, int g, int b) {
-    redLed = r;
-    greenLed = g;
-    blueLed = b;
+  RgbAddressableLed(int strip) {
+    rgbPin = strip;
   }
   void eepromRead();
 
@@ -47,7 +43,7 @@ public:
 
   void Pattern(LedPatterns pattern, LedPatternDelay patterndelay);
 
-  void colorWrite(ColorType color, int brightness);
+  void colorWrite(rgbColor color);
 
   void OffState();
 

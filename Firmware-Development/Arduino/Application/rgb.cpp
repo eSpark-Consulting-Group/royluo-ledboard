@@ -4,6 +4,8 @@ extern ApplicationState status;
 
 static PatternState state = LED_ON_STATE;
 
+Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
 Button button(BUTTON);
 
 rgbColor colorPalette[MAX_COLOR] = {
@@ -37,10 +39,8 @@ LedPatterns cycleOfpattern = {
   }
 };
 
-void RgbAddressableLed::Write(rgbColor palette){
-  colorWrite(RED_PIN, palette.redColor);
-  colorWrite(GREEN_PIN, palette.greenColor);
-  colorWrite(BLUE_PIN, palette.blueColor);
+void RgbAddressableLed::Write(rgbColor palette) {
+  colorWrite(palette);
 }
 
 void RgbAddressableLed::Pattern(LedPatterns pattern, LedPatternDelay patterndelay) {
@@ -81,20 +81,13 @@ void RgbAddressableLed::Pattern(LedPatterns pattern, LedPatternDelay patterndela
   }
 }
 
-void RgbAddressableLed::colorWrite(ColorType color, int brightness) {
-  switch (color) {
-    case RED_PIN:
-      analogWrite(redLed, brightness);
-      break;
-    case GREEN_PIN:
-      analogWrite(greenLed, brightness);
-      break;
-    case BLUE_PIN:
-      analogWrite(blueLed, brightness);
-      break;
-    default:
-      break;
-  }
+void RgbAddressableLed::colorWrite(rgbColor palette) {
+      pixels.clear();
+      for(int i = 0; i <= NUMPIXELS; i++)
+      {
+        pixels.setPixelColor(i, pixels.Color(palette.redColor,palette.greenColor,palette.blueColor));
+      }
+      pixels.show();
 }
 
 void RgbAddressableLed::OffState() {
