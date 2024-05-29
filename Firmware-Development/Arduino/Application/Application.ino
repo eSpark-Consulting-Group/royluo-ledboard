@@ -13,6 +13,32 @@ void setup() {
   pinMode(BLUE, OUTPUT);
   pinMode(BUTTON, INPUT);
 
+
+  char royLuo[7] = "Roy Luo";
+
+  char read[7];
+
+  bool check = true;
+
+  for (int i = 0; i < 7; i++) {
+    read[i] = EEPROM.read(i + 3);
+
+    if (read[i] != royLuo[i]) {
+      check = false;
+      break;
+    }
+  }
+
+  if (!check) {
+    for (int j = 0; j < 7; j++) {
+      EEPROM.write(j + 3, royLuo[j]);
+    }
+    for(int i = 0; i < NO_OF_COLORS; i++)
+    {
+      EEPROM.write(i, i+1);
+    }
+  }
+
   rgb.eepromRead();
 }
 
