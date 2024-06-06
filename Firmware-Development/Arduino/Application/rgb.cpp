@@ -4,7 +4,7 @@ extern ApplicationState status;
 
 static PatternState state = LED_ON_STATE;
 
-Adafruit_NeoPixel pixels(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+tinyNeoPixel pixels = tinyNeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
 Button button(BUTTON);
 
@@ -17,7 +17,7 @@ rgbColor colorPalette[MAX_COLOR] = {
   { 0, 128, 0 },
   { 255, 165, 0 },
   { 255, 255, 255 },
-  { 246, 231, 210 },
+  { 240, 220, 200 },
   { 255, 0, 255 },
   { 230, 230, 250 },
   { 128, 0, 128 },
@@ -82,12 +82,12 @@ void RgbAddressableLed::Pattern(LedPatterns pattern, LedPatternDelay patterndela
 }
 
 void RgbAddressableLed::colorWrite(rgbColor palette) {
-      pixels.clear();
-      for(int i = 0; i <= NUMPIXELS; i++)
-      {
-        pixels.setPixelColor(i, pixels.Color(palette.redColor,palette.greenColor,palette.blueColor));
-      }
-      pixels.show();
+  for (int i = 0; i <= NUMPIXELS; i++)
+  {
+    pixels.setPixelColor(i, pixels.Color(palette.redColor, palette.greenColor, palette.blueColor));
+
+    pixels.show();
+  }
 }
 
 void RgbAddressableLed::OffState() {
@@ -96,13 +96,13 @@ void RgbAddressableLed::OffState() {
   switch (functionState) {
     case SETUP_STATE:
       Write(colorPalette[0]);
-      if (button.buttonState() == OFF) {
+      if (button.getState() == OFF) {
         functionState = LOOP_STATE;
       }
       break;
 
     case LOOP_STATE:
-      ButtonPress btnStatus = button.buttonState();
+      ButtonState btnStatus = button.getState();
       if (btnStatus == SINGLE_PRESS) {
         status = ON_STATE;
         functionState = SETUP_STATE;
@@ -122,7 +122,7 @@ void RgbAddressableLed::PatternState() {
   switch (functionState) {
     case SETUP_STATE:
       Write(colorPalette[0]);
-      if (button.buttonState() == OFF) {
+      if (button.getState() == OFF) {
         functionState = LOOP_STATE;
       }
       break;
@@ -133,7 +133,7 @@ void RgbAddressableLed::PatternState() {
         Serial.println(counter);
         Pattern(cycleOfpattern, cycleOfpattern.patterndelays[counter - 1]);
       }
-      ButtonPress btnStatus = button.buttonState();
+      ButtonState btnStatus = button.getState();
       if (btnStatus == SINGLE_PRESS) {
         counter++;
         if (counter > NO_OF_PATTERN) {
@@ -164,13 +164,13 @@ void RgbAddressableLed::colorState() {
         counter = 1;
         Write(colorPalette[counter]);
       }
-      if (button.buttonState() == OFF) {
+      if (button.getState() == OFF) {
         functionState = LOOP_STATE;
       }
       break;
 
     case LOOP_STATE:
-      ButtonPress btnStatus = button.buttonState();
+      ButtonState btnStatus = button.getState();
 
       if (btnStatus == SINGLE_PRESS) {
         counter++;

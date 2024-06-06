@@ -1,17 +1,17 @@
 #include "Application.h"
 
-enum ButtonPress {
+enum ButtonState {
   SINGLE_PRESS,
   HOLD_PRESS,
   OFF
 };
 
 class Button {
-  int button;
+  int pin;
 
 public:
-  Button(int btn) {
-    button = btn;
+  Button(int pin) {
+    this->pin = pin;
   }
-  int buttonState();
+  int getState();
 };

@@ -1,17 +1,17 @@
 #include "button.hpp"
 
-int Button::buttonState() {
+int Button::getState() {
 
-  ButtonPress btnStatus = OFF;
+  ButtonState btnStatus = OFF;
 
   unsigned long debounceTime = 50;
 
-  int btnState = digitalRead(button);
+  int btnState = digitalRead(pin);
 
-  if (btnState == HIGH) {
+  if (btnState == LOW) {
 
     unsigned long pressStartTime = millis();
-    while (digitalRead(button) == HIGH && (millis() - pressStartTime) <= 2000) {
+    while (digitalRead(pin) == LOW && (millis() - pressStartTime) <= 2000) {
     }
 
     unsigned long T_Time = millis() - pressStartTime;
